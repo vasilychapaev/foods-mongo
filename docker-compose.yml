@@ -1,0 +1,38 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongo-foods-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+  laravel:
+    build:
+      context: ./laravel
+      dockerfile: Dockerfile
+    container_name: mongo-foods-laravel
+    volumes:
+      - ./laravel:/var/www/html
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+
+  symfony:
+    build:
+      context: ./symfony
+      dockerfile: Dockerfile
+    container_name: mongo-foods-symfony
+    volumes:
+      - ./symfony:/var/www/html
+    ports:
+      - "8001:8001"
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data: 
