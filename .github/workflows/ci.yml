@@ -9,27 +9,26 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+    services:
+      docker:
+        image: docker:24.0.2-dind
+        options: --privileged
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Build and test Laravel
-      run: |
-        docker-compose build laravel
-        docker-compose up -d mongodb laravel
-        docker-compose exec -T laravel composer install
-        docker-compose exec -T laravel php artisan test
-        
-    # - name: Build and test Symfony
-    #   run: |
-    #     docker-compose build symfony
-    #     docker-compose up -d symfony
-    #     docker-compose exec -T symfony composer install
-    #     docker-compose exec -T symfony php bin/phpunit
-        
-    - name: Cleanup
-      if: always()
-      run: docker-compose down 
+      - uses: actions/checkout@v4
+
+      - name: Install docker-compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Build and test Laravel
+        run: |
+          docker-compose build laravel
+          docker-compose up -d mongodb laravel
+          docker-compose exec -T laravel composer install --ansi --no-interaction
+          docker-compose exec -T laravel php artisan test --parallel
+
+      - name: Cleanup
+        if: always()
+        run: docker-compose down --volumes --remove-orphans
