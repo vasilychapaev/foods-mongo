@@ -1,0 +1,61 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongo-foods-db
+    restart: always
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    networks:
+      - mongo-foods
+
+  laravel:
+    image: ${DOCKERHUB_USERNAME}/mongo-foods-laravel:latest
+    container_name: mongo-foods-laravel
+    restart: always
+    depends_on:
+      - mongodb
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017
+    networks:
+      - mongo-foods
+
+  symfony:
+    image: ${DOCKERHUB_USERNAME}/mongo-foods-symfony:latest
+    container_name: mongo-foods-symfony
+    restart: always
+    depends_on:
+      - mongodb
+    environment:
+      - APP_ENV=prod
+      - APP_DEBUG=0
+      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017
+    networks:
+      - mongo-foods
+
+  nginx:
+    image: nginx:alpine
+    container_name: mongo-foods-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - laravel
+      # - symfony
+    networks:
+      - mongo-foods
+
+networks:
+  mongo-foods:
+    driver: bridge
+
+volumes:
+  mongodb_data: 

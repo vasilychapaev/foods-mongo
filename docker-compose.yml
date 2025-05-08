@@ -22,17 +22,17 @@ services:
     depends_on:
       - mongodb
 
-  symfony:
-    build:
-      context: ./symfony
-      dockerfile: Dockerfile
-    container_name: mongo-foods-symfony
-    volumes:
-      - ./symfony:/var/www/html
-    ports:
-      - "8001:8001"
-    depends_on:
-      - mongodb
+  # symfony:
+  #   build:
+  #     context: ./symfony
+  #     dockerfile: Dockerfile
+  #   container_name: mongo-foods-symfony
+  #   volumes:
+  #     - ./symfony:/var/www/html
+  #   ports:
+  #     - "8001:8001"
+  #   depends_on:
+  #     - mongodb
 
 volumes:
   mongodb_data: 
