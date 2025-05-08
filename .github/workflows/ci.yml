@@ -10,29 +10,40 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # чтобы встроенный плагин docker compose и DinD работали вместе
-    env:
-      DOCKER_HOST: tcp://docker:2375
-      DOCKER_TLS_CERTDIR: ""            # убираем TLS
+    # Поднимаем Docker-in-Docker
     services:
       docker:
-        image: docker:24.0.2-dind       # запускаем DinD-демон
+        image: docker:24.0.2-dind
         options: --privileged
+        ports:
+          - 2375:2375
+
+    # Говорим docker CLI, где искать демон, и отключаем TLS
+    env:
+      DOCKER_HOST: tcp://localhost:2375
+      DOCKER_TLS_CERTDIR: ""
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Проверка Docker
-        run: docker info
+      # Ждём, пока DinD-демон будет готов
+      - name: Wait for Docker daemon
+        run: |
+          for i in $(seq 1 15); do
+            if docker info >/dev/null 2>&1; then
+              echo "Docker is ready"; break
+            fi
+            echo "Waiting for Docker daemon…"; sleep 1
+          done
 
       - name: Build and test Laravel
         run: |
+          # используем встроенный плагин: 'docker compose' вместо absent docker-compose
           docker compose build laravel
           docker compose up -d mongodb laravel
           docker compose exec -T laravel composer install --ansi --no-interaction
           docker compose exec -T laravel php artisan test --parallel
 
-
       - name: Cleanup
         if: always()
-        run: docker-compose down --volumes --remove-orphans
+        run: docker compose down --volumes --remove-orphans
