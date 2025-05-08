@@ -10,15 +10,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # Поднимаем Docker-in-Docker
+    # Поднимаем Docker-in-Docker как сервис
     services:
       docker:
         image: docker:24.0.2-dind
         options: --privileged
         ports:
           - 2375:2375
+        env:
+          # Отключаем TLS в самом демоне
+          DOCKER_TLS_CERTDIR: ""
 
-    # Говорим docker CLI, где искать демон, и отключаем TLS
+    # Указываем клиенту, куда стучаться
     env:
       DOCKER_HOST: tcp://localhost:2375
       DOCKER_TLS_CERTDIR: ""
@@ -26,19 +29,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Ждём, пока DinD-демон будет готов
       - name: Wait for Docker daemon
         run: |
           for i in $(seq 1 15); do
             if docker info >/dev/null 2>&1; then
-              echo "Docker is ready"; break
+              echo "Docker daemon is up"; break
             fi
-            echo "Waiting for Docker daemon…"; sleep 1
+            echo "Waiting for Docker…"; sleep 1
           done
 
       - name: Build and test Laravel
         run: |
-          # используем встроенный плагин: 'docker compose' вместо absent docker-compose
+          # Новым плагином docker compose
           docker compose build laravel
           docker compose up -d mongodb laravel
           docker compose exec -T laravel composer install --ansi --no-interaction
