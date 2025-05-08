@@ -9,25 +9,29 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    # чтобы встроенный плагин docker compose и DinD работали вместе
+    env:
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_TLS_CERTDIR: ""            # убираем TLS
     services:
       docker:
-        image: docker:24.0.2-dind
+        image: docker:24.0.2-dind       # запускаем DinD-демон
         options: --privileged
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install docker-compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+      - name: Проверка Docker
+        run: docker info
 
       - name: Build and test Laravel
         run: |
-          docker-compose build laravel
-          docker-compose up -d mongodb laravel
-          docker-compose exec -T laravel composer install --ansi --no-interaction
-          docker-compose exec -T laravel php artisan test --parallel
+          docker compose build laravel
+          docker compose up -d mongodb laravel
+          docker compose exec -T laravel composer install --ansi --no-interaction
+          docker compose exec -T laravel php artisan test --parallel
+
 
       - name: Cleanup
         if: always()
